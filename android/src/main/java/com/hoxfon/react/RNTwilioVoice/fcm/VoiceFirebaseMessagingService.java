@@ -37,13 +37,21 @@ public class VoiceFirebaseMessagingService extends FirebaseMessagingService {
 
     private CallNotificationManager callNotificationManager;
 
+    /**
+     * Support delegate
+     */
     private FirebaseMessagingService mFirebaseServiceDelegate;
 
+    /**
+     *
+     * @param delegate
+     */
     public VoiceFirebaseMessagingService(FirebaseMessagingService delegate) {
         super();
         this.mFirebaseServiceDelegate = delegate;
         callNotificationManager = new CallNotificationManager();
     }
+
 
     @Override
     public void onCreate() {
@@ -71,10 +79,13 @@ public class VoiceFirebaseMessagingService extends FirebaseMessagingService {
             Log.d(TAG, "Bundle data: " + remoteMessage.getData());
         }
 
+        // * check
+        final FirebaseMessagingService serviceRef = (this.mFirebaseServiceDelegate == null) ? this : this.mFirebaseServiceDelegate;
+
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
             Map<String, String> data = remoteMessage.getData();
-            final FirebaseMessagingService serviceRef = (this.mFirebaseServiceDelegate == null) ? this : this.mFirebaseServiceDelegate;
+
             // If notification ID is not provided by the user for push notification, generate one at random
             Random randomNumberGenerator = new Random(System.currentTimeMillis());
             final int notificationId = randomNumberGenerator.nextInt();
@@ -90,7 +101,7 @@ public class VoiceFirebaseMessagingService extends FirebaseMessagingService {
                     handler.post(new Runnable() {
                         public void run() {
                             // Construct and load our normal React JS code bundle
-                            ReactInstanceManager mReactInstanceManager = ((ReactApplication)serviceRef.getApplication()).getReactNativeHost().getReactInstanceManager();
+                            ReactInstanceManager mReactInstanceManager = ((ReactApplication) serviceRef.getApplication()).getReactNativeHost().getReactInstanceManager();
                             ReactContext context = mReactInstanceManager.getCurrentReactContext();
                             // If it's constructed, send a notification
                             if (context != null) {

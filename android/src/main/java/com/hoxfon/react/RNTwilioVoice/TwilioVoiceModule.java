@@ -67,6 +67,7 @@ import static com.hoxfon.react.RNTwilioVoice.EventManager.EVENT_CALL_INVITE_CANC
 import static com.hoxfon.react.RNTwilioVoice.EventManager.EVENT_CONNECTION_IS_RECONNECTING;
 import static com.hoxfon.react.RNTwilioVoice.EventManager.EVENT_CONNECTION_DID_RECONNECT;
 
+
 public class TwilioVoiceModule extends ReactContextBaseJavaModule implements ActivityEventListener, LifecycleEventListener {
 
     public static String TAG = "RNTwilioVoice";
@@ -202,7 +203,10 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "onNewIntent " + intent.toString());
         }
-        handleIncomingCallIntent(intent);
+
+        if (intent.getAction() != null) {
+            handleIncomingCallIntent(intent);
+        }
     }
 
     private RegistrationListener registrationListener() {
@@ -457,11 +461,7 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
     }
 
     private void handleIncomingCallIntent(Intent intent) {
-        if (intent == null || intent.getAction() == null) {
-            return;
-        }
-        String action = intent.getAction();
-        if (action.equals(ACTION_INCOMING_CALL)) {
+        if (intent.getAction().equals(ACTION_INCOMING_CALL)) {
             if (BuildConfig.DEBUG) {
                 Log.d(TAG, "handleIncomingCallIntent");
             }
@@ -492,7 +492,7 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
                 // TODO evaluate what more is needed at this point?
                 Log.e(TAG, "ACTION_INCOMING_CALL but not active call");
             }
-        } else if (action.equals(ACTION_CANCEL_CALL_INVITE)) {
+        } else if (intent.getAction().equals(ACTION_CANCEL_CALL_INVITE)) {
             SoundPoolManager.getInstance(getReactApplicationContext()).stopRinging();
             if (BuildConfig.DEBUG) {
                 Log.d(TAG, "activeCallInvite was cancelled by " + activeCallInvite.getFrom());
@@ -513,7 +513,7 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
                 }
             }
             clearIncomingNotification(activeCallInvite.getCallSid());
-        } else if (action.equals(ACTION_FCM_TOKEN)) {
+        } else if (intent.getAction().equals(ACTION_FCM_TOKEN)) {
             if (BuildConfig.DEBUG) {
                 Log.d(TAG, "handleIncomingCallIntent ACTION_FCM_TOKEN");
             }
@@ -559,10 +559,10 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
             return;
         }
 
-        if(!checkPermissionForMicrophone()) {
-            promise.reject(new AssertionException("Allow microphone permission"));
-            return;
-        }
+        // if(!checkPermissionForMicrophone()) {
+        //     promise.reject(new AssertionException("Allow microphone permission"));
+        //     return;
+        // }
 
         TwilioVoiceModule.this.accessToken = accessToken;
         if (BuildConfig.DEBUG) {
@@ -620,32 +620,38 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
 
     @ReactMethod
     public void accept() {
-        callAccepted = true;
-        SoundPoolManager.getInstance(getReactApplicationContext()).stopRinging();
-        if (activeCallInvite != null) {
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "accept()");
-            }
-            AcceptOptions acceptOptions = new AcceptOptions.Builder()
-                    .enableDscp(true)
-                    .build();
-            activeCallInvite.accept(getReactApplicationContext(), acceptOptions, callListener);
-            clearIncomingNotification(activeCallInvite.getCallSid());
+        // if the user accepted microphone permission then answer the call
+        if(checkPermissionForMicrophone()) {
+            callAccepted = true;
+            SoundPoolManager.getInstance(getReactApplicationContext()).stopRinging();
+            if (activeCallInvite != null) {
+                if (BuildConfig.DEBUG) {
+                  Log.d(TAG, "accept()");
+                }
+                AcceptOptions acceptOptions = new AcceptOptions.Builder()
+                  .enableDscp(true)
+                  .build();
+                activeCallInvite.accept(getReactApplicationContext(), acceptOptions, callListener);
+                clearIncomingNotification(activeCallInvite.getCallSid());
 
-            // TODO check whether this block is needed
-//            // when the user answers a call from a notification before the react-native App
-//            // is completely initialised, and the first event has been skipped
-//            // re-send connectionDidConnect message to JS
-//            WritableMap params = Arguments.createMap();
-//            params.putString("call_sid",   activeCallInvite.getCallSid());
-//            params.putString("call_from",  activeCallInvite.getFrom());
-//            params.putString("call_to",    activeCallInvite.getTo());
-//            callNotificationManager.createHangupLocalNotification(getReactApplicationContext(),
-//                    activeCallInvite.getCallSid(),
-//                    activeCallInvite.getFrom());
-//            eventManager.sendEvent(EVENT_CONNECTION_DID_CONNECT, params);
-        } else {
-            eventManager.sendEvent(EVENT_CONNECTION_DID_DISCONNECT, null);
+              // TODO check whether this block is needed
+  //            // when the user answers a call from a notification before the react-native App
+  //            // is completely initialised, and the first event has been skipped
+  //            // re-send connectionDidConnect message to JS
+  //            WritableMap params = Arguments.createMap();
+  //            params.putString("call_sid",   activeCallInvite.getCallSid());
+  //            params.putString("call_from",  activeCallInvite.getFrom());
+  //            params.putString("call_to",    activeCallInvite.getTo());
+  //            callNotificationManager.createHangupLocalNotification(getReactApplicationContext(),
+  //                    activeCallInvite.getCallSid(),
+  //                    activeCallInvite.getFrom());
+  //            eventManager.sendEvent(EVENT_CONNECTION_DID_CONNECT, params);
+            } else {
+                eventManager.sendEvent(EVENT_CONNECTION_DID_DISCONNECT, null);
+            }
+        }  else {
+            // if the user denied microphone permission then reject the call
+            reject();
         }
     }
 
