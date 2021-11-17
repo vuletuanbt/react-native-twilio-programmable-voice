@@ -1,7 +1,3 @@
-//
-//  TwilioVoice.m
-//
-
 #import "RNTwilioVoice.h"
 #import <React/RCTLog.h>
 
@@ -11,6 +7,7 @@
 @import TwilioVoice;
 
 NSString * const kCachedDeviceToken = @"CachedDeviceToken";
+NSString * const kCallerNameCustomParameter = @"CallerName";
 NSString * const twilioAccessToken = @"twilioAccessToken";
 
 @interface RNTwilioVoice () <PKPushRegistryDelegate, TVONotificationDelegate, TVOCallDelegate, CXProviderDelegate>
@@ -36,7 +33,6 @@ NSString * const twilioAccessToken = @"twilioAccessToken";
   NSMutableDictionary *_callParams;
   NSString *_tokenUrl;
   NSString *_token;
-  NSString *_oldToken;
 }
 
 NSString * const StateConnecting = @"CONNECTING";
@@ -145,6 +141,11 @@ RCT_EXPORT_METHOD(setMuted: (BOOL *)muted) {
     self.activeCall.muted = muted ? YES : NO;
 }
 
+RCT_EXPORT_METHOD(setOnHold: (BOOL *)isOnHold) {
+  NSLog(@"Hold/Unhold call");
+    self.activeCall.onHold = isOnHold ? YES : NO;
+}
+
 RCT_EXPORT_METHOD(setSpeakerPhone: (BOOL *)speaker) {
     [self toggleAudioRoute: speaker ? YES : NO];
 }
@@ -225,6 +226,71 @@ RCT_REMAP_METHOD(getCallInvite,
   self.voipRegistry = [[PKPushRegistry alloc] initWithQueue:dispatch_get_main_queue()];
   self.voipRegistry.delegate = self;
   self.voipRegistry.desiredPushTypes = [NSSet setWithObject:PKPushTypeVoIP];
+}
+
+
+- (void) configCallKit: (NSDictionary *)params {
+    if (self.callKitCallController == nil) {
+        /*
+         * The important thing to remember when providing a TVOAudioDevice is that the device must be set
+         * before performing any other actions with the SDK (such as connecting a Call, or accepting an incoming Call).
+         * In this case we've already initialized our own `TVODefaultAudioDevice` instance which we will now set.
+         */
+        self.audioDevice = [TVODefaultAudioDevice audioDevice];
+        TwilioVoice.audioDevice = self.audioDevice;
+
+        self.activeCallInvites = [NSMutableDictionary dictionary];
+        self.activeCalls = [NSMutableDictionary dictionary];
+
+        _settings = [[NSMutableDictionary alloc] initWithDictionary:params];
+        CXProviderConfiguration *configuration = [[CXProviderConfiguration alloc] initWithLocalizedName:params[@"appName"]];
+        configuration.maximumCallGroups = 1;
+        configuration.maximumCallsPerCallGroup = 1;
+        if (_settings[@"imageName"]) {
+            configuration.iconTemplateImageData = UIImagePNGRepresentation([UIImage imageNamed:_settings[@"imageName"]]);
+        }
+        if (_settings[@"ringtoneSound"]) {
+            configuration.ringtoneSound = _settings[@"ringtoneSound"];
+        }
+
+        _callKitProvider = [[CXProvider alloc] initWithConfiguration:configuration];
+        [_callKitProvider setDelegate:self queue:nil];
+
+        NSLog(@"CallKit Initialized");
+
+        self.callKitCallController = [[CXCallController alloc] init];
+    }
+}
+
+- (void) reRegisterWithTwilioVoice {
+    NSString *accessToken = [self fetchAccessToken];
+    NSString *cachedDeviceToken = [[NSUserDefaults standardUserDefaults] objectForKey:kCachedDeviceToken];
+    NSLog(@"TwilioVoice accessToken: %@", [NSString stringWithFormat:@"%@",accessToken]);
+    NSLog(@"TwilioVoice cachedDeviceToken: %@", [NSString stringWithFormat:@"%@",cachedDeviceToken]);
+    if (cachedDeviceToken.length > 0) {
+        [TwilioVoice registerWithAccessToken:accessToken
+                                           deviceToken:cachedDeviceToken
+                                            completion:^(NSError *error) {
+                       if (error) {
+                           NSLog(@"An error occurred while re-registering: %@", [error localizedDescription]);
+                           NSMutableDictionary *params = [[NSMutableDictionary alloc] init];
+                           [params setObject:[error localizedDescription] forKey:@"err"];
+
+                           [self sendEventWithName:@"deviceNotReady" body:params];
+                       }
+                       else {
+                           NSLog(@"Successfully re-registered for VoIP push notifications.");
+
+                           /*
+                            * Save the device token after successfully registered.
+                            */
+                           [[NSUserDefaults standardUserDefaults] setObject:cachedDeviceToken forKey:kCachedDeviceToken];
+                           [self sendEventWithName:@"deviceReady" body:nil];
+                       }
+                   }];
+
+    }
+
 }
 
 - (NSString *)fetchAccessToken {
@@ -358,23 +424,25 @@ didReceiveIncomingPushWithPayload:(PKPushPayload *)payload
 withCompletionHandler:(void (^)(void))completion {
     NSLog(@"pushRegistry:didReceiveIncomingPushWithPayload:forType:withCompletionHandler");
 
+    // Save for later when the notification is properly handled.
+    self.incomingPushCompletionCallback = completion;
+
+
     if ([type isEqualToString:PKPushTypeVoIP]) {
         // The Voice SDK will use main queue to invoke `cancelledCallInviteReceived:error` when delegate queue is not passed
         if (![TwilioVoice handleNotification:payload.dictionaryPayload delegate:self delegateQueue: nil]) {
             NSLog(@"This is not a valid Twilio Voice notification.");
         }
     }
-    if (completion) {
-      if ([[NSProcessInfo processInfo] operatingSystemVersion].majorVersion < 13) {
-          // Save for later when the notification is properly handled.
-          self.incomingPushCompletionCallback = completion;
-      } else {
-          /**
-          * The Voice SDK processes the call notification and returns the call invite synchronously. Report the incoming call to
-          * CallKit and fulfill the completion before exiting this callback method.
-          */
-          completion();
-      }
+    if ([[NSProcessInfo processInfo] operatingSystemVersion].majorVersion < 13) {
+        // Save for later when the notification is properly handled.
+        self.incomingPushCompletionCallback = completion;
+    } else {
+        /**
+        * The Voice SDK processes the call notification and returns the call invite synchronously. Report the incoming call to
+        * CallKit and fulfill the completion before exiting this callback method.
+        */
+        completion();
     }
 }
 
@@ -395,6 +463,9 @@ withCompletionHandler:(void (^)(void))completion {
     NSString *from = @"Unknown";
     if (callInvite.from) {
         from = [callInvite.from stringByReplacingOccurrencesOfString:@"client:" withString:@""];
+    }
+    if (callInvite.customParameters[kCallerNameCustomParameter]) {
+        from = callInvite.customParameters[kCallerNameCustomParameter];
     }
     // Always report to CallKit
     [self reportIncomingCallFrom:from withUUID:callInvite.uuid];
@@ -776,7 +847,9 @@ withCompletionHandler:(void (^)(void))completion {
 }
 
 - (void)reportIncomingCallFrom:(NSString *)from withUUID:(NSUUID *)uuid {
-  CXHandle *callHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:from];
+  CXHandleType type = [[from substringToIndex:1] isEqual:@"+"] ? CXHandleTypePhoneNumber : CXHandleTypeGeneric;
+  // lets replace 'client:' with ''
+  CXHandle *callHandle = [[CXHandle alloc] initWithType:type value:[from stringByReplacingOccurrencesOfString:@"client:" withString:@""]];
 
   CXCallUpdate *callUpdate = [[CXCallUpdate alloc] init];
   callUpdate.remoteHandle = callHandle;
@@ -796,10 +869,9 @@ withCompletionHandler:(void (^)(void))completion {
 }
 
 - (void)performEndCallActionWithUUID:(NSUUID *)uuid {
-
-    if (uuid == nil) {
-        return;
-    }
+  if (uuid == nil) {
+    return;
+  }
 
     NSLog(@"RNTwilio performEndCallActionWithUUID:NSUUID: %@", uuid);
     CXEndCallAction *endCallAction = [[CXEndCallAction alloc] initWithCallUUID:uuid];
@@ -868,14 +940,11 @@ withCompletionHandler:(void (^)(void))completion {
     if ([[NSProcessInfo processInfo] operatingSystemVersion].majorVersion < 13) {
         [self incomingPushHandled];
     }
-
-    NSLog(@"RNTwilio performAnswerVoiceCallWithUUID: %@", callInvite.uuid.UUIDString);
-
-
 }
 
 - (void)handleAppTerminateNotification {
   NSLog(@"handleAppTerminateNotification called");
+
   if (self.activeCall) {
     NSLog(@"handleAppTerminateNotification disconnecting an active call");
     [self.activeCall disconnect];
