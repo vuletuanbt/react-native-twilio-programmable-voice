@@ -1,37 +1,12 @@
 {
-  "_from": "react-native-twilio-programmable-voice@4.1.0",
-  "_id": "react-native-twilio-programmable-voice@4.1.0",
-  "_inBundle": false,
-  "_integrity": "sha512-/Bh1Lh+gpCIdCWBezh63FMmu0R7bKq9JC74JUkoax7hXiFSL7ZYShcmrsmjLhDOFsGoaWOVpBj4kgrBng3Uxag==",
-  "_location": "/react-native-twilio-programmable-voice",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "version",
-    "registry": true,
-    "raw": "react-native-twilio-programmable-voice@4.1.0",
-    "name": "react-native-twilio-programmable-voice",
-    "escapedName": "react-native-twilio-programmable-voice",
-    "rawSpec": "4.1.0",
-    "saveSpec": null,
-    "fetchSpec": "4.1.0"
-  },
-  "_requiredBy": [
-    "/"
-  ],
-  "_resolved": "https://registry.npmjs.org/react-native-twilio-programmable-voice/-/react-native-twilio-programmable-voice-4.1.0.tgz",
-  "_shasum": "88ad97258cd16be64a6eef79cf408e58ba3755e7",
-  "_spec": "react-native-twilio-programmable-voice@4.1.0",
-  "_where": "/Users/apple/projects/minden/mobile/minden_reactnative",
-  "author": {
-    "name": "Fabrizio Moscon"
-  },
-  "bugs": {
-    "url": "https://github.com/hoxfon/react-native-twilio-programmable-voice/issues"
-  },
-  "bundleDependencies": false,
-  "deprecated": false,
+  "name": "react-native-twilio-programmable-voice",
+  "version": "4.4.0",
   "description": "React Native wrapper for Twilio Programmable Voice SDK",
-  "devDependencies": {},
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "nativePackage": true,
   "homepage": "https://github.com/hoxfon/react-native-twilio-programmable-voice",
   "keywords": [
     "twilio",
@@ -46,15 +21,22 @@
     "gcm",
     "fcm"
   ],
-  "license": "MIT",
-  "main": "index.js",
-  "name": "react-native-twilio-programmable-voice",
+  "bugs": {
+    "url": "https://github.com/hoxfon/react-native-twilio-programmable-voice/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/hoxfon/react-native-twilio-programmable-voice.git"
+    "url": "git+ssh://git@github.com:hoxfon/react-native-twilio-programmable-voice.git"
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "contributors": [
+    {
+      "name": "Fabrizio Moscon"
+    }
+  ],
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {
+    "react-native": ">=0.60.0"
   },
-  "version": "4.1.0"
+  "license": "MIT"
 }

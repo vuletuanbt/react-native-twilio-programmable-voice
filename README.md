@@ -61,14 +61,14 @@ Android: update Firebase Messaging to 17.6.+. Remove the following block from yo
 
 ```xml
     <!-- [START instanceId_listener] -->
-<service
+    <service
         android:name="com.hoxfon.react.TwilioVoice.fcm.VoiceFirebaseInstanceIDService"
         android:exported="false">
-  <intent-filter>
-    <action android:name="com.google.android.gms.iid.InstanceID" />
-  </intent-filter>
-</service>
-        <!-- [END instanceId_listener] -->
+        <intent-filter>
+            <action android:name="com.google.android.gms.iid.InstanceID" />
+        </intent-filter>
+    </service>
+    <!-- [END instanceId_listener] -->
 ```
 
 Android X is supported.
@@ -77,9 +77,9 @@ Data passed to the event `deviceDidReceiveIncoming` does not contain the key `ca
 
 - iOS: params changes for `connectionDidConnect` and `connectionDidDisconnect`
 
-  to => call_to
-  from => call_from
-  error => err
+    to => call_to
+    from => call_from
+    error => err
 
 New features
 
@@ -103,8 +103,8 @@ iOS application can now receive the following events, that in v3 where only disp
 
 - initWitToken returns an object with a property `initialized` instead of `initilized`
 - iOS event `connectionDidConnect` returns the same properties as Android
-  move property `to` => `call_to`
-  move property `from` => `call_from`
+move property `to` => `call_to`
+move property `from` => `call_from`
 
 ### Installation
 
@@ -282,89 +282,89 @@ function initTelephonyWithToken(token) {
 ```javascript
 // add listeners (flowtype notation)
 TwilioVoice.addEventListener('deviceReady', function() {
-  // no data
+    // no data
 })
 TwilioVoice.addEventListener('deviceNotReady', function(data) {
-  // {
-  //     err: string
-  // }
+    // {
+    //     err: string
+    // }
 })
 TwilioVoice.addEventListener('connectionDidConnect', function(data) {
-  // {
-  //     call_sid: string,  // Twilio call sid
-  //     call_state: 'CONNECTED' | 'ACCEPTED' | 'CONNECTING' | 'RINGING' | 'DISCONNECTED' | 'CANCELLED',
-  //     call_from: string, // "+441234567890"
-  //     call_to: string,   // "client:bob"
-  // }
+    // {
+    //     call_sid: string,  // Twilio call sid
+    //     call_state: 'CONNECTED' | 'ACCEPTED' | 'CONNECTING' | 'RINGING' | 'DISCONNECTED' | 'CANCELLED',
+    //     call_from: string, // "+441234567890"
+    //     call_to: string,   // "client:bob"
+    // }
 })
 TwilioVoice.addEventListener('connectionIsReconnecting', function(data) {
-  // {
-  //     call_sid: string,  // Twilio call sid
-  //     call_from: string, // "+441234567890"
-  //     call_to: string,   // "client:bob"
-  // }
+    // {
+    //     call_sid: string,  // Twilio call sid
+    //     call_from: string, // "+441234567890"
+    //     call_to: string,   // "client:bob"
+    // }
 })
 TwilioVoice.addEventListener('connectionDidReconnect', function(data) {
-  // {
-  //     call_sid: string,  // Twilio call sid
-  //     call_from: string, // "+441234567890"
-  //     call_to: string,   // "client:bob"
-  // }
+    // {
+    //     call_sid: string,  // Twilio call sid
+    //     call_from: string, // "+441234567890"
+    //     call_to: string,   // "client:bob"
+    // }
 })
 TwilioVoice.addEventListener('connectionDidDisconnect', function(data: mixed) {
-  //   | null
-  //   | {
-  //       err: string
-  //     }
-  //   | {
-  //         call_sid: string,  // Twilio call sid
-  //         call_state: 'CONNECTED' | 'ACCEPTED' | 'CONNECTING' | 'RINGING' | 'DISCONNECTED' | 'CANCELLED',
-  //         call_from: string, // "+441234567890"
-  //         call_to: string,   // "client:bob"
-  //         err?: string,
-  //     }
+    //   | null
+    //   | {
+    //       err: string
+    //     }
+    //   | {
+    //         call_sid: string,  // Twilio call sid
+    //         call_state: 'CONNECTED' | 'ACCEPTED' | 'CONNECTING' | 'RINGING' | 'DISCONNECTED' | 'CANCELLED',
+    //         call_from: string, // "+441234567890"
+    //         call_to: string,   // "client:bob"
+    //         err?: string,
+    //     }
 })
 TwilioVoice.addEventListener('callStateRinging', function(data: mixed) {
-  //   {
-  //       call_sid: string,  // Twilio call sid
-  //       call_state: 'CONNECTED' | 'ACCEPTED' | 'CONNECTING' | 'RINGING' | 'DISCONNECTED' | 'CANCELLED',
-  //       call_from: string, // "+441234567890"
-  //       call_to: string,   // "client:bob"
-  //   }
+    //   {
+    //       call_sid: string,  // Twilio call sid
+    //       call_state: 'CONNECTED' | 'ACCEPTED' | 'CONNECTING' | 'RINGING' | 'DISCONNECTED' | 'CANCELLED',
+    //       call_from: string, // "+441234567890"
+    //       call_to: string,   // "client:bob"
+    //   }
 })
 TwilioVoice.addEventListener('callInviteCancelled', function(data: mixed) {
-  //   {
-  //       call_sid: string,  // Twilio call sid
-  //       call_from: string, // "+441234567890"
-  //       call_to: string,   // "client:bob"
-  //   }
+    //   {
+    //       call_sid: string,  // Twilio call sid
+    //       call_from: string, // "+441234567890"
+    //       call_to: string,   // "client:bob"
+    //   }
 })
 
 // iOS Only
 TwilioVoice.addEventListener('callRejected', function(value: 'callRejected') {})
 
 TwilioVoice.addEventListener('deviceDidReceiveIncoming', function(data) {
-  // {
-  //     call_sid: string,  // Twilio call sid
-  //     call_from: string, // "+441234567890"
-  //     call_to: string,   // "client:bob"
-  // }
+    // {
+    //     call_sid: string,  // Twilio call sid
+    //     call_from: string, // "+441234567890"
+    //     call_to: string,   // "client:bob"
+    // }
 })
 
 // Android Only
 TwilioVoice.addEventListener('proximity', function(data) {
-  // {
-  //     isNear: boolean
-  // }
+    // {
+    //     isNear: boolean
+    // }
 })
 
 // Android Only
 TwilioVoice.addEventListener('wiredHeadset', function(data) {
-  // {
-  //     isPlugged: boolean,
-  //     hasMic: boolean,
-  //     deviceName: string
-  // }
+    // {
+    //     isPlugged: boolean,
+    //     hasMic: boolean,
+    //     deviceName: string
+    // }
 })
 
 // ...
@@ -396,19 +396,19 @@ TwilioVoice.sendDigits(digits)
 
 // Ensure that an active call is displayed when the app comes to foreground
 TwilioVoice.getActiveCall()
-        .then(activeCall => {
-          if (activeCall){
+    .then(activeCall => {
+        if (activeCall){
             _displayActiveCall(activeCall)
-          }
-        })
+        }
+    })
 
 // Ensure that call invites are displayed when the app comes to foreground
 TwilioVoice.getCallInvite()
-        .then(callInvite => {
-          if (callInvite){
+    .then(callInvite => {
+        if (callInvite){
             _handleCallInvite(callInvite)
-          }
-        })
+        }
+    })
 
 // Unregister device with Twilio (iOS only)
 TwilioVoice.unregister()
