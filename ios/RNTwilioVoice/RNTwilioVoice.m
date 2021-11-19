@@ -80,40 +80,6 @@ RCT_EXPORT_METHOD(configureCallKit: (NSDictionary *)params) {
     NSLog(@"RNTwilio initTwilioVoice in background");
 }
 
-- (void) configCallKit: (NSDictionary *)params {
-
-    if (self.callKitCallController == nil) {
-      /*
-       * The important thing to remember when providing a TVOAudioDevice is that the device must be set
-       * before performing any other actions with the SDK (such as connecting a Call, or accepting an incoming Call).
-       * In this case we've already initialized our own `TVODefaultAudioDevice` instance which we will now set.
-       */
-      self.audioDevice = [TVODefaultAudioDevice audioDevice];
-      TwilioVoice.audioDevice = self.audioDevice;
-
-      self.activeCallInvites = [NSMutableDictionary dictionary];
-      self.activeCalls = [NSMutableDictionary dictionary];
-
-    _settings = [[NSMutableDictionary alloc] initWithDictionary:params];
-    CXProviderConfiguration *configuration = [[CXProviderConfiguration alloc] initWithLocalizedName:params[@"appName"]];
-    configuration.maximumCallGroups = 1;
-    configuration.maximumCallsPerCallGroup = 1;
-    if (_settings[@"imageName"]) {
-      configuration.iconTemplateImageData = UIImagePNGRepresentation([UIImage imageNamed:_settings[@"imageName"]]);
-    }
-    if (_settings[@"ringtoneSound"]) {
-      configuration.ringtoneSound = _settings[@"ringtoneSound"];
-    }
-
-    _callKitProvider = [[CXProvider alloc] initWithConfiguration:configuration];
-    [_callKitProvider setDelegate:self queue:nil];
-
-    NSLog(@"CallKit Initialized");
-
-    self.callKitCallController = [[CXCallController alloc] init];
-  }
-}
-
 RCT_EXPORT_METHOD(connect: (NSDictionary *)params) {
   NSLog(@"Calling phone number %@", [params valueForKey:@"To"]);
 
