@@ -486,6 +486,12 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
                     params.putString("call_sid", activeCallInvite.getCallSid());
                     params.putString("call_from", activeCallInvite.getFrom());
                     params.putString("call_to", activeCallInvite.getTo()); // TODO check if needed
+                    Map<String, String> customParameters = activeCallInvite.getCustomParameters();
+                    WritableMap customParams = Arguments.createMap();
+                    for (Map.Entry<String, String> entry: customParameters.entrySet()) {
+                        customParams.putString(entry.getKey(), entry.getValue());
+                    }
+                    params.putMap("custom_param", customParams);
                     eventManager.sendEvent(EVENT_DEVICE_DID_RECEIVE_INCOMING, params);
                 }
             } else {
