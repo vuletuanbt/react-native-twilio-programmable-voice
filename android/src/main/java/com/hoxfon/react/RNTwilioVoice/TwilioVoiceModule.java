@@ -559,10 +559,10 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
             return;
         }
 
-        if(!checkPermissionForMicrophone()) {
-            promise.reject(new AssertionException("Allow microphone permission"));
-            return;
-        }
+        // if(!checkPermissionForMicrophone()) {
+        //     promise.reject(new AssertionException("Allow microphone permission"));
+        //     return;
+        // }
 
         TwilioVoiceModule.this.accessToken = accessToken;
         if (BuildConfig.DEBUG) {
@@ -620,32 +620,38 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
 
     @ReactMethod
     public void accept() {
-        callAccepted = true;
-        SoundPoolManager.getInstance(getReactApplicationContext()).stopRinging();
-        if (activeCallInvite != null) {
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "accept()");
-            }
-            AcceptOptions acceptOptions = new AcceptOptions.Builder()
-                    .enableDscp(true)
-                    .build();
-            activeCallInvite.accept(getReactApplicationContext(), acceptOptions, callListener);
-            clearIncomingNotification(activeCallInvite.getCallSid());
+        // if the user accepted microphone permission then answer the call
+        if (checkPermissionForMicrophone()) {
+            callAccepted = true;
+            SoundPoolManager.getInstance(getReactApplicationContext()).stopRinging();
+            if (activeCallInvite != null) {
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "accept()");
+                }
+                AcceptOptions acceptOptions = new AcceptOptions.Builder()
+                        .enableDscp(true)
+                        .build();
+                activeCallInvite.accept(getReactApplicationContext(), acceptOptions, callListener);
+                clearIncomingNotification(activeCallInvite.getCallSid());
 
-            // TODO check whether this block is needed
-//            // when the user answers a call from a notification before the react-native App
-//            // is completely initialised, and the first event has been skipped
-//            // re-send connectionDidConnect message to JS
-//            WritableMap params = Arguments.createMap();
-//            params.putString("call_sid",   activeCallInvite.getCallSid());
-//            params.putString("call_from",  activeCallInvite.getFrom());
-//            params.putString("call_to",    activeCallInvite.getTo());
-//            callNotificationManager.createHangupLocalNotification(getReactApplicationContext(),
-//                    activeCallInvite.getCallSid(),
-//                    activeCallInvite.getFrom());
-//            eventManager.sendEvent(EVENT_CONNECTION_DID_CONNECT, params);
+                // TODO check whether this block is needed
+                //            // when the user answers a call from a notification before the react-native App
+                //            // is completely initialised, and the first event has been skipped
+                //            // re-send connectionDidConnect message to JS
+                //            WritableMap params = Arguments.createMap();
+                //            params.putString("call_sid",   activeCallInvite.getCallSid());
+                //            params.putString("call_from",  activeCallInvite.getFrom());
+                //            params.putString("call_to",    activeCallInvite.getTo());
+                //            callNotificationManager.createHangupLocalNotification(getReactApplicationContext(),
+                //                    activeCallInvite.getCallSid(),
+                //                    activeCallInvite.getFrom());
+                //            eventManager.sendEvent(EVENT_CONNECTION_DID_CONNECT, params);
+            } else {
+                eventManager.sendEvent(EVENT_CONNECTION_DID_DISCONNECT, null);
+            }
         } else {
-            eventManager.sendEvent(EVENT_CONNECTION_DID_DISCONNECT, null);
+            // if the user denied microphone permission then reject the call
+            reject();
         }
     }
 
