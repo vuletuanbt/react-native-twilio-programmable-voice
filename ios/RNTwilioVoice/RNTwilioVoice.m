@@ -450,6 +450,7 @@ withCompletionHandler:(void (^)(void))completion {
     if (callInvite.to) {
       [params setObject:callInvite.to forKey:@"call_to"];
     }
+    [params setObject:callInvite.customParameters forKey:@"custom_param"];
     [self sendEventWithName:@"deviceDidReceiveIncoming" body:params];
 }
 
