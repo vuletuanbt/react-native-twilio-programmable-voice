@@ -117,6 +117,8 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
 
     static Map<String, Integer> callNotificationMap;
 
+    private WritableMap customParam;
+
     private RegistrationListener registrationListener = registrationListener();
     private Call.Listener callListener = callListener();
 
@@ -486,6 +488,11 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
                     params.putString("call_sid", activeCallInvite.getCallSid());
                     params.putString("call_from", activeCallInvite.getFrom());
                     params.putString("call_to", activeCallInvite.getTo()); // TODO check if needed
+                    Map<String, String> customParameters = activeCallInvite.getCustomParameters();
+                    for (Map.Entry<String, String> entry: customParameters.entrySet()) {
+                        customParam.putString(entry.getKey(), entry.getValue());
+                    }
+                    params.putMap("custom_param", customParam);
                     eventManager.sendEvent(EVENT_DEVICE_DID_RECEIVE_INCOMING, params);
                 }
             } else {
@@ -587,6 +594,7 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
         callNotificationManager.removeIncomingCallNotification(getReactApplicationContext(), null, notificationId);
         TwilioVoiceModule.callNotificationMap.remove(notificationKey);
         activeCallInvite = null;
+//        customParam = null;
     }
 
     /*
@@ -752,6 +760,7 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
         if (activeCall != null) {
             activeCall.disconnect();
             activeCall = null;
+            customParam = null;
         }
     }
 
@@ -784,6 +793,9 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
             params.putString("call_from",  activeCall.getFrom());
             params.putString("call_to",    toNum);
             params.putString("call_state", activeCall.getState().name());
+            if (params.isNull("custom_param")) {
+                params.putMap("custom_param", customParam);
+            }
             promise.resolve(params);
             return;
         }
